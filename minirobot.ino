@@ -17,7 +17,8 @@
 /******************************************/
 //       Included Constants 
 /******************************************/
-#include "config.h"
+#include "User_Code.h"
+
 
 /******************************************/
 //       Private Definitions
@@ -29,14 +30,9 @@
 
 
 /******************************************/
-//       User function declaration 
-/******************************************/
-void run_robot(void);
-
-/******************************************/
 //       Private, Internal data 
 /******************************************/
-unsigned char current_speed_pwm = 0;
+float current_speed_pct = 0;
 boolean current_left_motor_dir = FORWARD;
 boolean current_right_motor_dir = FORWARD;
 
@@ -64,8 +60,8 @@ void setup() {
 void loop() {
 
   //play tone sequence to indicate robot is starting
-  tone(SPEAKER_PIN, NOTE_F6, 750);
-  tone(SPEAKER_PIN, NOTE_C7, 1500);    
+  tone(SPEAKER_PIN, 1397 , 750);
+  tone(SPEAKER_PIN, 2093, 1500);    
   
   //pause briefly before starting
   delay(1000); 
@@ -77,8 +73,8 @@ void loop() {
   delay(1000); 
   
   //play tone sequence to indicate robot is finished
-  tone(SPEAKER_PIN, NOTE_C7, 750);
-  tone(SPEAKER_PIN, NOTE_F6, 1500);    
+  tone(SPEAKER_PIN, 2093, 750);
+  tone(SPEAKER_PIN, 1397 , 1500);    
   
   while(1); //JK, don't run a loop here, just hang when the user's function finishes
 }
@@ -95,9 +91,22 @@ unsigned char convert_pct_to_pwm(float percent)
 }
 
 //set motor speed and directions with approprate inversions
-void set_motor_vals(boolean right_dir, unsigned char right_speed, boolean left_dir, unsigned char left_speed)
+void set_motor_vals(boolean right_dir, float right_speed, boolean left_dir, float left_speed)
 {
+  //set motor speeds with approprate type conversion
+  analogWrite(RIGHT_MOTOR_PWM_PIN, convert_pct_to_pwm(right_speed));
+  analogWrite(LEFT_MOTOR_PWM_PIN, convert_pct_to_pwm(left_speed));
   
+  //set motor directions based on inversion 
+  if(INVERT_RIGHT_MOTOR_DIR)
+    digitalWrite(RIGHT_MOTOR_DIR_PIN, !right_dir);
+  else
+    digitalWrite(RIGHT_MOTOR_DIR_PIN, right_dir);
+  
+  if(INVERT_LEFT_MOTOR_DIR)
+    digitalWrite(LEFT_MOTOR_DIR_PIN, !left_dir);
+  else
+    digitalWrite(LEFT_MOTOR_DIR_PIN, left_dir);
   
 }
 
@@ -105,70 +114,94 @@ void set_motor_vals(boolean right_dir, unsigned char right_speed, boolean left_d
 //User API function implementations
 void setDirectionFwd(void)
 {
-  
+  current_right_motor_dir = FORWARD;
+  current_left_motor_dir = FORWARD;
+  set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
 }
 void setDirectionRev(void)
 {
-  
+  current_right_motor_dir = REVERSE;
+  current_left_motor_dir = REVERSE;
+  set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
 }
 void setDirectionLeft(void)
 {
-  
+  current_right_motor_dir = FORWARD;
+  current_left_motor_dir = FORWARD;  
+  set_motor_vals(current_right_motor_dir, 0.0, current_left_motor_dir, current_speed_pct); 
 }
 void setDirectionRight(void)
 {
-  
+  current_right_motor_dir = FORWARD;
+  current_left_motor_dir = FORWARD;  
+  set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, 0.0); 
 }
 void setDirectionSharpLeft(void)
 {
-  
+  current_right_motor_dir = FORWARD;
+  current_left_motor_dir = REVERSE;  
+  set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
 }
 void setDirectionSharpRight(void)
 {
-  
+  current_right_motor_dir = REVERSE;
+  current_left_motor_dir = FORWARD;    
+  set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
 }
 
 void setSpeedMax(void)
 {
-  
+  current_speed_pct = SPEED_MAX;
+  set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
 }
 void setSpeedFast(void)
 {
-  
+  current_speed_pct = SPEED_FAST;
+  set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
 }
 void setSpeedMedium(void)
 {
-  
+  current_speed_pct = SPEED_MEDIUM;
+  set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
 }
 void setSpeedSlow(void)
 {
-  
+  current_speed_pct = SPEED_SLOW;
+  set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
 }
 void setSpeedStop(void)
 {
-  
+  current_speed_pct = 0;
+  set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
 }
 
 void turnRedLEDOn(void)
 {
-  
+  if(INVERT_RED_LED)
+    digitalWrite(RED_LED_PIN, LOW);
+  else
+    digitalWrite(RED_LED_PIN, HIGH);
 }
 void turnRedLEDOff(void)
 {
-  
+  if(INVERT_RED_LED)
+    digitalWrite(RED_LED_PIN, HIGH);
+  else
+    digitalWrite(RED_LED_PIN, LOW);
 }
 void turnGreenLEDOn(void)
 {
-  
+  if(INVERT_GREEN_LED)
+    digitalWrite(GREEN_LED_PIN, LOW);
+  else
+    digitalWrite(GREEN_LED_PIN, HIGH);
 }
 void turnGreenLEDOff(void)
 {
-  
-}
-
-void setBigLEDColor(const char * color)
-{
-  
+  if(INVERT_GREEN_LED)
+    digitalWrite(GREEN_LED_PIN, HIGH);
+  else
+    digitalWrite(GREEN_LED_PIN, LOW);
 }
 
 void playBeep1(void)

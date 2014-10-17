@@ -9,14 +9,15 @@
   The function you write here is called once. The robot just goes down the
   "list of instructions" you put here to figure out what to do. 
  */
-#include "config.h"
  
+#include "User_Code.h" 
+
 void run_robot(void)
 {
   /******************************************/
   /*       START WRITING CODE HERE!!!       */
   
-  
+  setDirectionFwd();
   
   
   
