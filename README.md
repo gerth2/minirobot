@@ -6,13 +6,13 @@ Arduino Framework for educational robot for Kaite Birkel
 By Chris Gerth - Fall 2014
 
 Robot User API:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Motion Functions 
 -Can control both direction and speed.
 -At any time, speed needs to be set to something besides "Stop" for motion to occur
 --ie, at the start, you can't just say "setDirectionFwd()" you have to also call "setSpeedFast()" or something like that.
 -Default values: Direction = Fwd, Speed = Stop
-
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void setDirectionFwd(void)
 void setDirectionRev(void)
 void setDirectionLeft(void)
@@ -26,19 +26,17 @@ void setSpeedMedium(void)
 void setSpeedSlow(void)
 void setSpeedStop(void)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 Output Functions
 -Allow the robot to interface with the outside world
 -A sample set is provided assuming output devices include red LED, green LED, tri-color LED ("BigLED"), and speaker
 -All these are good for debugging (ie, robot should be turning right, so make led green, robot is stopped, so make led red, that sort of thing)
-
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void turnRedLEDOn(void)
 void turnRedLEDOff(void)
 void turnGreenLEDOn(void)
 void turnGreenLEDOff(void)
-
-void setBigLEDColor(const str color)
-
-- colors: 'Red' 'Blue' 'Green' 'Yellow' 'Aqua' 'Magenta' 'White' 'Off'
   
 void playBeep1(void)
 void playBeep2(void)
@@ -51,8 +49,8 @@ void printMessage(const str message)
 void printRobotStatus(void)
 -prints block of debugging data to serial port:
 
-"
----------------------------------------------
+
+
 Seconds since program started: <num_sec>
 Direction: <dir>
 Speed: <speed>
@@ -63,13 +61,13 @@ Right Light Sensor: <number>%
 Red LED: <on / off>
 Green LED: <on / off>
 Big LED: <some color>
----------------------------------------------
-"
-
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Input Functions
 
+
+
+Input Functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 boolean CurrentLeftSwitchValue(void) 
 boolean CurrentRightSwitchValue(void)
 
@@ -82,15 +80,15 @@ float CurrentRightLightSensorVal(void)
 
 -normalized to 0.00-100.00% of full range of analog input
 -filtering and linearisation possible
-
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 if/else/while/math/delay() - use arduino-native functions
 
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Configuration section - Mentor will be required to set this up to match hardware specifications:
 
+Configuration section - Mentor will be required to set this up to match hardware specifications:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //io pin numbers
 #define LEFT_MOTOR_PIN <int>
 #define RIGHT_MOTOR_PIN <int>
@@ -131,3 +129,4 @@ Configuration section - Mentor will be required to set this up to match hardware
 #define BEEP_3_ON_LENGTH_MS <int>
 #define BEEP_3_OFF_LENGTH_MS <int>
 #define BEEP_3_REPEAT <int>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

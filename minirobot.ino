@@ -35,6 +35,8 @@
 float current_speed_pct = 0;
 boolean current_left_motor_dir = FORWARD;
 boolean current_right_motor_dir = FORWARD;
+String current_dir_str = "NONE";
+String current_speed_str = "STOP";
 
 /******************************************/
 //       Arduino Setup Function 
@@ -50,6 +52,8 @@ void setup() {
   pinMode(RED_LED_PIN, OUTPUT); 
   pinMode(GREEN_LED_PIN, OUTPUT); 
   pinMode(SPEAKER_PIN , OUTPUT); 
+  
+  Serial.begin(115200);
 }
 
 /******************************************/
@@ -69,6 +73,9 @@ void loop() {
   //run user's function
   run_robot(); //The user's function! Yaaaay!
   
+  //kill the motors in case the student forgot to
+  set_motor_vals(FORWARD, 0.0, FORWARD, 0.0);
+
   //pause briefly at the end
   delay(1000); 
   
@@ -106,73 +113,86 @@ void set_motor_vals(boolean right_dir, float right_speed, boolean left_dir, floa
   if(INVERT_LEFT_MOTOR_DIR)
     digitalWrite(LEFT_MOTOR_DIR_PIN, !left_dir);
   else
-    digitalWrite(LEFT_MOTOR_DIR_PIN, left_dir);
-  
+    digitalWrite(LEFT_MOTOR_DIR_PIN, left_dir); 
 }
 
 
-//User API function implementations
+
+/******************************************/
+//       User API Implementation
+/******************************************/
 void setDirectionFwd(void)
 {
   current_right_motor_dir = FORWARD;
   current_left_motor_dir = FORWARD;
-  set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
+  set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct);
+  current_dir_str = "FWD"; 
 }
 void setDirectionRev(void)
 {
   current_right_motor_dir = REVERSE;
   current_left_motor_dir = REVERSE;
   set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
+  current_dir_str = "REV"; 
 }
 void setDirectionLeft(void)
 {
   current_right_motor_dir = FORWARD;
   current_left_motor_dir = FORWARD;  
   set_motor_vals(current_right_motor_dir, 0.0, current_left_motor_dir, current_speed_pct); 
+  current_dir_str = "LEFT"; 
 }
 void setDirectionRight(void)
 {
   current_right_motor_dir = FORWARD;
   current_left_motor_dir = FORWARD;  
   set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, 0.0); 
+  current_dir_str = "RIGHT"; 
 }
 void setDirectionSharpLeft(void)
 {
   current_right_motor_dir = FORWARD;
   current_left_motor_dir = REVERSE;  
   set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
+  current_dir_str = "SharpLEFT"; 
 }
 void setDirectionSharpRight(void)
 {
   current_right_motor_dir = REVERSE;
   current_left_motor_dir = FORWARD;    
   set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
+  current_dir_str = "SharpRIGHT"; 
 }
 
 void setSpeedMax(void)
 {
   current_speed_pct = SPEED_MAX;
   set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
+  current_speed_str = "MAX";
 }
 void setSpeedFast(void)
 {
   current_speed_pct = SPEED_FAST;
   set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
+  current_speed_str = "FAST";
 }
 void setSpeedMedium(void)
 {
   current_speed_pct = SPEED_MEDIUM;
   set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
+  current_speed_str = "MEDIUM";
 }
 void setSpeedSlow(void)
 {
   current_speed_pct = SPEED_SLOW;
   set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
+  current_speed_str = "SLOW";
 }
 void setSpeedStop(void)
 {
   current_speed_pct = 0;
   set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct); 
+  current_speed_str = "STOP";
 }
 
 void turnRedLEDOn(void)
@@ -216,16 +236,26 @@ void playBeep3(void)
 {
   
 }
-void playBeepCustom(int pitch_in_hz, int length)
+void playBeepCustom(int pitch_in_hz, int length_in_ms)
 {
-  
+  tone(SPEAKER_PIN, pitch_in_hz, length_in_ms);
 }
 
 void printMessage(const char * message)
 {
-  
+  Serial.println(message); 
 }
 void printRobotStatus(void)
 {
+  Serial.println("-------------------------------------");
+  Serial.print("Runtime: ");
+  Serial.print((float)millis()/1000.0);
+  Serial.print("Direction: ");
+  Serial.println(current_dir_str);
+  Serial.print("Speed: ");
+  Serial.println(current_speed_str);
+  Serial.println("-------------------------------------");
+  
+  
   
 }
