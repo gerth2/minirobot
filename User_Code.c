@@ -9,6 +9,7 @@
   The function you write here is called once. The robot just goes down the
   "list of instructions" you put here to figure out what to do. 
  */
+#include "config.h"
  
 void run_robot(void)
 {
