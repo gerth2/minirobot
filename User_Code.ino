@@ -17,7 +17,31 @@ void run_robot(void)
   /******************************************/
   /*       START WRITING CODE HERE!!!       */
   
-  setDirectionFwd();
+ setDirectionFwd();
+ 
+  while(1)
+  {
+    setSpeedMax();
+    printRobotStatus();
+    delay(250);
+    
+    setSpeedFast();
+    printRobotStatus();
+    delay(250);
+    
+    setSpeedMedium();
+    printRobotStatus();
+    delay(250);
+    
+    setSpeedSlow();
+    printRobotStatus();
+    delay(250);
+    
+    setSpeedStop();
+    printRobotStatus();
+    delay(250);
+    
+  }
   
   
   

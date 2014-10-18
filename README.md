@@ -60,7 +60,6 @@ Left Light Sensor: <number>%
 Right Light Sensor: <number>%
 Red LED: <on / off>
 Green LED: <on / off>
-Big LED: <some color>
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
