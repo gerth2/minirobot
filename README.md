@@ -14,21 +14,21 @@ These functions allow you to move your robot from place to place.
 
 * Can control both direction and speed.
 * At any time, speed needs to be set to something besides "Stop" for motion to occur
-** ie, at the start, you can't just say "setDirectionFwd()" you have to also call "setSpeedFast()" or something like that.
+    * ie, at the start, you can't just say "setDirectionFwd();" you have to also call "setSpeedFast();" or something like that.
 * Default values: Direction = FWD, Speed = STOP
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-setDirectionFwd()
-setDirectionRev()
-setDirectionLeft()
-setDirectionRight()
-setDirectionSharpLeft()
-setDirectionSharpRight()
+setDirectionFwd();
+setDirectionRev();
+setDirectionLeft();
+setDirectionRight();
+setDirectionSharpLeft();
+setDirectionSharpRight();
 
-setSpeedMax()
-setSpeedFast()
-setSpeedMedium()
-setSpeedSlow()
-setSpeedStop()
+setSpeedMax();
+setSpeedFast();
+setSpeedMedium();
+setSpeedSlow();
+setSpeedStop();
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ### Output Functions
@@ -43,20 +43,20 @@ All these are good for debugging (ie, robot should be turning right, so make led
 
 * Change the state of an LED
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-turnRedLEDOn()
-turnRedLEDOff()
-turnGreenLEDOn()
-turnGreenLEDOff()
+turnRedLEDOn();
+turnRedLEDOff();
+turnGreenLEDOn();
+turnGreenLEDOff();
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Print an arbitrary message to the serial port
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-printMessage("Your Message Here")
+printMessage("Your Message Here");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Prints block of debugging data to serial port:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-printRobotStatus()
+printRobotStatus();
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This will generate the following message on the PC:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,27 +78,27 @@ Green LED: <ON or OFF>
 These functions allow you to capture input from the outside world
 
 * Digital Switch inputs
-** Return true if pressed, false if released
-** Inputs are debounced for 20ms
-*** This means that the value of the switch must remain stable for 20ms before that stable value is reported by this functions
-*** This helps prevent incorrect readings due to the mechanical action of the switch or noise on the input
+    * Return true if pressed, false if released
+    * Inputs are debounced for 20ms
+        * This means that the value of the switch must remain stable for 20ms before that stable value is reported by this functions
+        * This helps prevent incorrect readings due to the mechanical action of the switch or noise on the input
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-boolean currentLeftSwitchValue() 
-boolean currentRightSwitchValue()
+boolean currentLeftSwitchValue(); 
+boolean currentRightSwitchValue();
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *Analog Light Sensor inputs
-** Normalized to 0.00-100.00% of full range of analog input
-** Low-Pass filtered with a cutoff of 17Hz
-*** This should reduce noise in sensor reading (especially from 60Hz light sources)
+    * Normalized to 0.00-100.00% of full range of analog input
+    * Low-Pass filtered with a cutoff of 17Hz
+        * This should reduce noise in sensor reading (especially from 60Hz light sources)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-float currentLeftLightSensorValue()
-float currentRightLightSensorValue()
+float currentLeftLightSensorValue();
+float currentRightLightSensorValue();
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ### Program Execution Control Functions
   
-ex: if/else/while/math/delay()  
+ex: if/else/while/math/delay();  
 
 Use the built-in functions that the Arduino enviroment provides you with. 
 They are documented at http://Arduino.cc/en/Reference/HomePage
@@ -109,7 +109,7 @@ They are documented at http://Arduino.cc/en/Reference/HomePage
 Mentor will be required to set this up to match hardware specifications. The provided numbers are the defaults.
 
 * IO Pin Numbers
-** Define the purpose of each pin on the Arduino
+    * Define the purpose of each pin on the Arduino
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //DO NOT USE pins 0 or 1, these are needed for serial communication
 
@@ -133,7 +133,7 @@ Mentor will be required to set this up to match hardware specifications. The pro
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * I/O Pin State Inversions
-** Provided so active-low electrical inputs or outputs map to the proper words/description in the API.
+    * Provided so active-low electrical inputs or outputs map to the proper words/description in the API.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #define INVERT_LEFT_SWITCH 0
 #define INVERT_RIGHT_SWITCH 0
@@ -146,7 +146,7 @@ Mentor will be required to set this up to match hardware specifications. The pro
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * User Constants
-**speed ranges in percent of full motor range - range should be 0 - 100
+    *speed ranges in percent of full motor range - range should be 0 - 100
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #define SPEED_MAX 100
 #define SPEED_FAST 75
