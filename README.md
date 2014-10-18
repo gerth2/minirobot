@@ -17,18 +17,18 @@ These functions allow you to move your robot from place to place.
 ** ie, at the start, you can't just say "setDirectionFwd()" you have to also call "setSpeedFast()" or something like that.
 * Default values: Direction = FWD, Speed = STOP
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-void setDirectionFwd()
-void setDirectionRev()
-void setDirectionLeft()
-void setDirectionRight()
-void setDirectionSharpLeft()
-void setDirectionSharpRight()
+setDirectionFwd()
+setDirectionRev()
+setDirectionLeft()
+setDirectionRight()
+setDirectionSharpLeft()
+setDirectionSharpRight()
 
-void setSpeedMax()
-void setSpeedFast()
-void setSpeedMedium()
-void setSpeedSlow()
-void setSpeedStop()
+setSpeedMax()
+setSpeedFast()
+setSpeedMedium()
+setSpeedSlow()
+setSpeedStop()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ### Output Functions
@@ -56,7 +56,7 @@ printMessage("Your Message Here")
 
 * Prints block of debugging data to serial port:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-void printRobotStatus()
+printRobotStatus()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This will generate the following message on the PC:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
