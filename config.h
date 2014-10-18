@@ -32,7 +32,6 @@
 #define GREEN_LED_PIN 8
 #define LEFT_MOTOR_DIR_PIN 9
 #define RIGHT_MOTOR_DIR_PIN 10
-#define SPEAKER_PIN 3
 
 /*********************************************************/
 //io state inversions

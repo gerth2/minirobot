@@ -21,7 +21,21 @@ void run_robot(void)
  
   while(1)
   {
+    turnRedLEDOn();
     printRobotStatus();
+    delay(1000);
+    
+    turnRedLEDOff();
+    printRobotStatus();
+    delay(1000);
+    
+   turnGreenLEDOn();
+    printRobotStatus();
+    delay(1000);
+    
+    turnGreenLEDOff();
+    printRobotStatus();
+    delay(1000);
     
   }
   

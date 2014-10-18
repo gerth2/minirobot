@@ -45,10 +45,12 @@ boolean current_left_motor_dir = FORWARD;
 boolean current_right_motor_dir = FORWARD;
 
 //Strings to hold kid-friendly descriptions of what's going on
-String current_dir_str = "NONE";
+String current_dir_str = "FWD";
 String current_speed_str = "STOP";
-String current_left_sw_value = "NOT PRESSED";
-String current_right_sw_value = "NOT PRESSED";
+String current_left_sw_str = "RELEASED";
+String current_right_sw_str = "RELEASED";
+String current_red_led_state_str = "OFF";
+String current_green_led_state_str = "OFF";
 
 //volatile b/c these are changed inside the interrupt routine
 volatile unsigned char left_filter_buff_start_idx = 0;
@@ -58,8 +60,12 @@ volatile unsigned char right_sw_buff_start_idx = 0;
 
 //filter analog inputs with a FIR filter 
 //Designed at http://t-filter.appspot.com/fir/index.html
-//Assumed passband of 0-30Hz, gain 1
-//Stopband: 50-250Hz, gain 0
+//Assumed passband of 0-17Hz, gain 1
+//Transition band 17-20Hz
+//Stopband: 20-250Hz, gain 0
+//Actual Passband Ripple: 12.10 dB
+//Actual Stopband Ripple: -20.02 dB
+//Assumed 25 taps and 500Hz sample frequency
 const float filter_coef[NUM_FILTER_TAPS] = {
                                                 0.0604206028416727,
                                                 0.022765286202108867,
@@ -86,7 +92,6 @@ const float filter_coef[NUM_FILTER_TAPS] = {
                                                 0.026559407357829072,
                                                 0.022765286202108867,
                                                 0.0604206028416727
-
                                                                           };
 
 //volatile b/c these are changed inside the interrupt routine
@@ -95,6 +100,7 @@ volatile unsigned int right_filter_buff[NUM_FILTER_TAPS];
 volatile boolean left_sw_buff[LEFT_SW_BUFFER_LEN];
 volatile boolean right_sw_buff[RIGHT_SW_BUFFER_LEN];
 
+//switch values (debounced)
 boolean left_sw_debounced_val = false;
 boolean right_sw_debounced_val = false;
 
@@ -103,8 +109,11 @@ boolean right_sw_debounced_val = false;
 //       Arduino Setup Function 
 /******************************************/
 void setup() {   
+  //Every time user hits the "Reset" button, the code re-initializes all the global variables (above)
+  //and starts running code here.
   
-  Serial.begin(115200); //Initalize serial port hardware
+  Serial.begin(115200); //Initalize serial port hardware. Must be done first so we can talk to the PC
+  
   Serial.println("Started initalizing..."); 
   
   // set pin direction modes so the microprocessor knows to drive or read the pin voltages
@@ -116,11 +125,15 @@ void setup() {
   pinMode(RIGHT_SWITCH_PIN, INPUT); 
   pinMode(RED_LED_PIN, OUTPUT); 
   pinMode(GREEN_LED_PIN, OUTPUT); 
-  pinMode(SPEAKER_PIN , OUTPUT); 
   
-  Timer1.initialize(SAMPLE_PERIOD_US);
-  Timer1.attachInterrupt(isr_sample);
-
+  //initalize outputs to off state
+  turnGreenLEDOff();
+  turnRedLEDOff();
+  
+  //Set up input sampling and start sampling.
+  Timer1.initialize(SAMPLE_PERIOD_US); //set Timer1 to trigger an interrupt every SAMPLE_PERIOD_US microseconds
+  Timer1.attachInterrupt(isr_sample); //Set up the "isr_sample()" function to be called every time Timer1 triggers an interrupt
+                                      //This will also enable interrupts to start input sampling at a regular rate.
   Serial.println("Done initalizing!"); 
   
 }
@@ -131,14 +144,18 @@ void setup() {
 // This is the arduino-required function for non-setup things.
 // We won't actually use it as a loop.
 void loop() {
+  //After the setup() function has completed, the arduino starts running code here.
   
-  //pause briefly before starting
+  //pause for 1 second (1000 ms) before starting
   delay(1000);
   
   //run user's function
   Serial.println("Starting User Function..."); 
+  
   run_robot(); //The user's function! Yaaaay!
+  
   Serial.println("Finished User Function!"); 
+  
   //kill the motors in case the student forgot to
   set_motor_vals(FORWARD, 0.0, FORWARD, 0.0);
 
@@ -155,7 +172,7 @@ void loop() {
 //this is an interrupt routine, so it must be as lightweight as possible
 void isr_sample(void)
 {
-   //write samples into circular buffer.  
+   //Sample each of the inputs, and write the result into a circular buffer 
    left_filter_buff[left_filter_buff_start_idx++] = analogRead(LEFT_LIGHT_SENSOR_PIN);
    if(left_filter_buff_start_idx == NUM_FILTER_TAPS)
      left_filter_buff_start_idx = 0;
@@ -214,7 +231,7 @@ float get_filtered_and_scaled_analog_sensor_val(volatile unsigned int * buffer, 
   }
   
   //scale from [0,1024] to a percent and return the value
-  return accumulator * 100/1024; 
+  return constrain((accumulator * 100/1024), 0.0, 100.0);
 
 }
 
@@ -298,6 +315,7 @@ void setSpeedStop(void)
 
 void turnRedLEDOn(void)
 {
+  current_red_led_state_str = "ON";
   if(INVERT_RED_LED)
     digitalWrite(RED_LED_PIN, LOW);
   else
@@ -305,6 +323,7 @@ void turnRedLEDOn(void)
 }
 void turnRedLEDOff(void)
 {
+  current_red_led_state_str = "OFF";
   if(INVERT_RED_LED)
     digitalWrite(RED_LED_PIN, HIGH);
   else
@@ -312,6 +331,7 @@ void turnRedLEDOff(void)
 }
 void turnGreenLEDOn(void)
 {
+  current_green_led_state_str = "ON";
   if(INVERT_GREEN_LED)
     digitalWrite(GREEN_LED_PIN, LOW);
   else
@@ -319,6 +339,7 @@ void turnGreenLEDOn(void)
 }
 void turnGreenLEDOff(void)
 {
+  current_green_led_state_str = "OFF";
   if(INVERT_GREEN_LED)
     digitalWrite(GREEN_LED_PIN, HIGH);
   else
@@ -340,16 +361,23 @@ void printRobotStatus(void)
   Serial.print("Speed: ");
   Serial.println(current_speed_str);
   Serial.print("Left Switch: ");
-  Serial.println(CurrentLeftSwitchValue());
+  CurrentLeftSwitchValue();
+  Serial.println(current_left_sw_str);
   Serial.print("Right Switch: ");
-  Serial.println(CurrentRightSwitchValue());
+  CurrentRightSwitchValue();
+  Serial.println(current_right_sw_str);
   Serial.print("Left Light Sensor: ");
   Serial.print(CurrentLeftLightSensorVal());
   Serial.println(" %");
   Serial.print("Right Light Sensor: ");
   Serial.print(CurrentRightLightSensorVal());
   Serial.println(" %");
+  Serial.print("Red LED: ");
+  Serial.println(current_red_led_state_str);
+  Serial.print("Green LED: ");
+  Serial.println(current_green_led_state_str);
   Serial.println("-------------------------------------");
+  Serial.println("");
 
 }
 
@@ -380,8 +408,20 @@ boolean CurrentLeftSwitchValue(void)
    }
    
    //if the buffer is stable, set the debounced val to the buffer's value (stable implies all buffer elements are equal)
+   //apply proper inversion
    if(val_is_stable)
-     left_sw_debounced_val = temp_val;
+   {
+     if(INVERT_LEFT_SWITCH == 1)
+       left_sw_debounced_val = !temp_val;
+     else
+       left_sw_debounced_val = temp_val;
+   }
+   
+   //provide a kid-friendly description of what is going on
+   if(left_sw_debounced_val)
+     current_left_sw_str = "PRESSED";
+   else
+     current_left_sw_str = "RELEASED";
      
    return left_sw_debounced_val;
 }
@@ -403,8 +443,20 @@ boolean CurrentRightSwitchValue(void)
    }
    
    //if the buffer is stable, set the debounced val to the buffer's value (stable implies all buffer elements are equal)
+   //apply proper inversion
    if(val_is_stable)
-     right_sw_debounced_val = temp_val;
+   {
+     if(INVERT_RIGHT_SWITCH == 1)
+       right_sw_debounced_val = !temp_val;
+     else
+       right_sw_debounced_val = temp_val;
+   }
+   
+   //provide a kid-friendly description of what is going on
+   if(right_sw_debounced_val)
+     current_right_sw_str = "PRESSED";
+   else
+     current_right_sw_str = "RELEASED";
      
    return right_sw_debounced_val;
   
