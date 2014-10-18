@@ -87,7 +87,7 @@ boolean currentLeftSwitchValue();
 boolean currentRightSwitchValue();
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*Analog Light Sensor inputs
+* Analog Light Sensor inputs
     * Normalized to 0.00-100.00% of full range of analog input
     * Low-Pass filtered with a cutoff of 17Hz
         * This should reduce noise in sensor reading (especially from 60Hz light sources)
@@ -104,7 +104,8 @@ Use the built-in functions that the Arduino enviroment provides you with.
 They are documented at http://Arduino.cc/en/Reference/HomePage
 
 
-### Configuration section 
+Configuration section 
+---------------------
 
 Mentor will be required to set this up to match hardware specifications. The provided numbers are the defaults.
 
@@ -146,7 +147,7 @@ Mentor will be required to set this up to match hardware specifications. The pro
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * User Constants
-    *speed ranges in percent of full motor range - range should be 0 - 100
+    * speed ranges in percent of full motor range - range should be 0 - 100
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #define SPEED_MAX 100
 #define SPEED_FAST 75
