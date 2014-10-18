@@ -17,8 +17,8 @@
 /******************************************/
 //       Included Constants 
 /******************************************/
-#include "User_Code.h"
-#include "TimerOne.h"
+#include "User_Code.h" //provides prototype for user's function (which isn't in this file)
+#include "TimerOne.h" //Library to manipulate hardware timer 1 on the arduino, which we will use to trigger regular sampling of the inputs
 
 
 /******************************************/
@@ -32,17 +32,20 @@
 #define SAMPLE_PERIOD_US 2000    //length of the input sample period in microseconds
                                  //2000us yeilds a sample rate of 500Hz
 
-#define NUM_FILTER_TAPS 25   //buffer lengths
-#define LEFT_SW_BUFFER_LEN 10
+#define NUM_FILTER_TAPS 25    //analog input FIR filter length
+#define LEFT_SW_BUFFER_LEN 10 //input switch debouncing buffer lengths
 #define RIGHT_SW_BUFFER_LEN 10
 
 
 /******************************************/
 //       Private, Internal data 
 /******************************************/
+//Global variables to hold the robot's current state
 float current_speed_pct = 0;
 boolean current_left_motor_dir = FORWARD;
 boolean current_right_motor_dir = FORWARD;
+boolean left_sw_debounced_val = false;
+boolean right_sw_debounced_val = false;
 
 //Strings to hold kid-friendly descriptions of what's going on
 String current_dir_str = "FWD";
@@ -52,13 +55,9 @@ String current_right_sw_str = "RELEASED";
 String current_red_led_state_str = "OFF";
 String current_green_led_state_str = "OFF";
 
-//volatile b/c these are changed inside the interrupt routine
-volatile unsigned char left_filter_buff_start_idx = 0;
-volatile unsigned char right_filter_buff_start_idx = 0;
-volatile unsigned char left_sw_buff_start_idx = 0;
-volatile unsigned char right_sw_buff_start_idx = 0;
 
-//filter analog inputs with a FIR filter 
+//Analog inputs are filtered with a FIR filter.
+//Filter specifications:
 //Designed at http://t-filter.appspot.com/fir/index.html
 //Assumed passband of 0-17Hz, gain 1
 //Transition band 17-20Hz
@@ -66,12 +65,16 @@ volatile unsigned char right_sw_buff_start_idx = 0;
 //Actual Passband Ripple: 12.10 dB
 //Actual Stopband Ripple: -20.02 dB
 //Assumed 25 taps and 500Hz sample frequency
-const float filter_coef[NUM_FILTER_TAPS] = {
-                                                0.0604206028416727,
-                                                0.022765286202108867,
-                                                0.026559407357829072,
-                                                0.030298526984037823,
-                                                0.0339463305236097,
+
+//The filter coefficents are "const" because they never change at runtime.
+
+//Using these specs and the website, we determined the following filter coefficents should be used:
+const float filter_coef[NUM_FILTER_TAPS] = {                            
+                                                0.0604206028416727,     //Note thses are far more accurate than  
+                                                0.022765286202108867,   // what can be represented in a float, but 
+                                                0.026559407357829072,   // we kept the accuracy for the heck of it. 
+                                                0.030298526984037823,   // The compiler can do whatever it needs to
+                                                0.0339463305236097,     // with the extra digits.
                                                 0.0374149200448067,
                                                 0.04063324687425954,
                                                 0.0435353609068285,
@@ -93,30 +96,42 @@ const float filter_coef[NUM_FILTER_TAPS] = {
                                                 0.022765286202108867,
                                                 0.0604206028416727
                                                                           };
-
+//Left and Right analog sensor filter input circular buffers
 //volatile b/c these are changed inside the interrupt routine
 volatile unsigned int left_filter_buff[NUM_FILTER_TAPS];
 volatile unsigned int right_filter_buff[NUM_FILTER_TAPS];
+
+//left and right switch debouncing buffers
 volatile boolean left_sw_buff[LEFT_SW_BUFFER_LEN];
 volatile boolean right_sw_buff[RIGHT_SW_BUFFER_LEN];
 
-//switch values (debounced)
-boolean left_sw_debounced_val = false;
-boolean right_sw_debounced_val = false;
+//pointers to the start of the buffer
+// which represents the oldest sample in the buffer
+// Every time a new sample is written, these should be incrimented
+// modulo the length of the buffer.
+//See http://en.wikipedia.org/wiki/Circular_buffer if you 
+// want to know more about how circular buffers work.
+//volatile b/c these are changed inside the interrupt routine
+volatile unsigned char left_filter_buff_start_idx = 0;
+volatile unsigned char right_filter_buff_start_idx = 0;
+volatile unsigned char left_sw_buff_start_idx = 0;
+volatile unsigned char right_sw_buff_start_idx = 0;
+
+
 
 
 /******************************************/
 //       Arduino Setup Function 
 /******************************************/
 void setup() {   
-  //Every time user hits the "Reset" button, the code re-initializes all the global variables (above)
-  //and starts running code here.
+  //Every time user hits the "Reset" button or power is applied to the arduino,
+  // the global variables (above) are re-initalized and the arduino starts running code here.
   
   Serial.begin(115200); //Initalize serial port hardware. Must be done first so we can talk to the PC
   
   Serial.println("Started initalizing..."); 
   
-  // set pin direction modes so the microprocessor knows to drive or read the pin voltages
+  //set pin direction modes so the microprocessor knows to drive or read the pin voltages
   pinMode(LEFT_MOTOR_PWM_PIN, OUTPUT);
   pinMode(RIGHT_MOTOR_PWM_PIN, OUTPUT);    
   pinMode(LEFT_MOTOR_DIR_PIN, OUTPUT);
@@ -132,8 +147,8 @@ void setup() {
   
   //Set up input sampling and start sampling.
   Timer1.initialize(SAMPLE_PERIOD_US); //set Timer1 to trigger an interrupt every SAMPLE_PERIOD_US microseconds
-  Timer1.attachInterrupt(isr_sample); //Set up the "isr_sample()" function to be called every time Timer1 triggers an interrupt
-                                      //This will also enable interrupts to start input sampling at a regular rate.
+  Timer1.attachInterrupt(isr_sample); //Set up the "isr_sample()" function to be called every time Timer1 triggers an interrupt.
+                                      // This will also enable interrupts to start input sampling at a regular rate.
   Serial.println("Done initalizing!"); 
   
 }
@@ -163,19 +178,23 @@ void loop() {
   delay(1000);
   
   while(1); //JK, don't run a loop here, just hang when the user's function finishes
+  //Fun trivia - this sort of while(1) is often called the "halt and catch fire" instruction.
 }
 
 /******************************************/
-//       Interrupt Functions
+//       Interrupt Function
 /******************************************/
-//samples all the inputs into the approprate buffers every time timer1 overflows
-//this is an interrupt routine, so it must be as lightweight as possible
+
+//Samples all the inputs into the approprate buffers every time timer1 overflows.
+//Runs every SAMPLE_PERIOD_US microseconds always, asynchronously with any other code.
+//This is an interrupt routine, so it must be as lightweight as possible.
 void isr_sample(void)
 {
    //Sample each of the inputs, and write the result into a circular buffer 
-   left_filter_buff[left_filter_buff_start_idx++] = analogRead(LEFT_LIGHT_SENSOR_PIN);
-   if(left_filter_buff_start_idx == NUM_FILTER_TAPS)
-     left_filter_buff_start_idx = 0;
+   left_filter_buff[left_filter_buff_start_idx++] = analogRead(LEFT_LIGHT_SENSOR_PIN); //overwrite the oldest element in the buffer, and then incriment the pointer.
+   //this IF statement is what makes the buffer act in a circular manner:
+   if(left_filter_buff_start_idx == NUM_FILTER_TAPS) //if we go off the end of the buffer in linear memory... 
+     left_filter_buff_start_idx = 0; //wrap back around to the top of the buffer in linear memory
      
    right_filter_buff[right_filter_buff_start_idx++] = analogRead(RIGHT_LIGHT_SENSOR_PIN);
    if(right_filter_buff_start_idx == NUM_FILTER_TAPS)
@@ -194,6 +213,7 @@ void isr_sample(void)
 /******************************************/
 //       Private Helper functions 
 /******************************************/
+
 //convert a percentage (0.0->100.0) to a pwm value (PWM_MIN->PWM_MAX)
 //ensure proper data typecasting
 unsigned char convert_pct_to_pwm(float percent)
@@ -205,7 +225,7 @@ unsigned char convert_pct_to_pwm(float percent)
 void set_motor_vals(boolean right_dir, float right_speed, boolean left_dir, float left_speed)
 {
   //set motor speeds with approprate type conversion
-  analogWrite(RIGHT_MOTOR_PWM_PIN, convert_pct_to_pwm(right_speed));
+  analogWrite(RIGHT_MOTOR_PWM_PIN, convert_pct_to_pwm(right_speed)); //this sets the pin to output a square wave with the desired duty cycle
   analogWrite(LEFT_MOTOR_PWM_PIN, convert_pct_to_pwm(left_speed));
   
   //set motor directions based on inversion 
@@ -220,14 +240,21 @@ void set_motor_vals(boolean right_dir, float right_speed, boolean left_dir, floa
     digitalWrite(LEFT_MOTOR_DIR_PIN, left_dir); 
 }
 
+//Filter output function
+//this function computes the current output of the FIR filtered inputs, given a whole input buffer
 float get_filtered_and_scaled_analog_sensor_val(volatile unsigned int * buffer, volatile unsigned char buf_start_index)
 {
+  //This is probably black magic to anyone who hasn't taken Digital Signal Processing. Just accept it, don't touch it,
+  // and move on with your life.
+  //If you MUST know what is going on here, check out http://en.wikipedia.org/wiki/Finite_impulse_response
+  // and then thank God you did not have to take exams about this stuff.
+  
   unsigned char i;
   float accumulator = 0;
   //perform FIR filter operation with circular buffer and pre-computed filter taps
   for(i = 0; i < NUM_FILTER_TAPS; i++)
   {
-    accumulator += (float)buffer[(i + buf_start_index) % NUM_FILTER_TAPS] * filter_coef[i];
+    accumulator += (float)buffer[(i + buf_start_index) % NUM_FILTER_TAPS] * filter_coef[i]; //EE MAGIC!
   }
   
   //scale from [0,1024] to a percent and return the value
@@ -239,11 +266,17 @@ float get_filtered_and_scaled_analog_sensor_val(volatile unsigned int * buffer, 
 /******************************************/
 //       User API Implementation
 /******************************************/
+
+//Most of the user API functions (the ones the little kids will use) are just
+// wrappers around my helper functions so they don't have to worry about passing
+// arguments or datatypes or things like that.
 void setDirectionFwd(void)
 {
-  current_right_motor_dir = FORWARD;
+  current_right_motor_dir = FORWARD; //change the internal state variables to what we want them to be
   current_left_motor_dir = FORWARD;
+  //set the current motor state to the output pins of the arduino
   set_motor_vals(current_right_motor_dir, current_speed_pct, current_left_motor_dir, current_speed_pct);
+  //update the kid-friendly string about the robot's state
   current_dir_str = "FWD"; 
 }
 void setDirectionRev(void)
@@ -313,11 +346,12 @@ void setSpeedStop(void)
   current_speed_str = "STOP";
 }
 
+//change the state of the LED's
 void turnRedLEDOn(void)
 {
-  current_red_led_state_str = "ON";
+  current_red_led_state_str = "ON"; //update kid-friendly string 
   if(INVERT_RED_LED)
-    digitalWrite(RED_LED_PIN, LOW);
+    digitalWrite(RED_LED_PIN, LOW); //set output pin to some value based on whether the the output should be inverted or not
   else
     digitalWrite(RED_LED_PIN, HIGH);
 }
@@ -346,14 +380,17 @@ void turnGreenLEDOff(void)
     digitalWrite(GREEN_LED_PIN, LOW);
 }
 
+//print a simple mesage to the serial port
 void printMessage(const char * message)
 {
   Serial.println(message); 
 }
+//print a pre-defined message containing all of the robot's current state
+//in a kid-friendly fashion.
 void printRobotStatus(void)
 {
   Serial.println("-------------------------------------");
-  Serial.print("Runtime: ");
+  Serial.print("Time Elapsed: ");
   Serial.print((float)millis()/1000.0);
   Serial.println(" s");
   Serial.print("Direction: ");
@@ -361,16 +398,16 @@ void printRobotStatus(void)
   Serial.print("Speed: ");
   Serial.println(current_speed_str);
   Serial.print("Left Switch: ");
-  CurrentLeftSwitchValue();
+  currentLeftSwitchValue();
   Serial.println(current_left_sw_str);
   Serial.print("Right Switch: ");
-  CurrentRightSwitchValue();
+  currentRightSwitchValue();
   Serial.println(current_right_sw_str);
   Serial.print("Left Light Sensor: ");
-  Serial.print(CurrentLeftLightSensorVal());
+  Serial.print(currentLeftLightSensorValue());
   Serial.println(" %");
   Serial.print("Right Light Sensor: ");
-  Serial.print(CurrentRightLightSensorVal());
+  Serial.print(currentRightLightSensorValue());
   Serial.println(" %");
   Serial.print("Red LED: ");
   Serial.println(current_red_led_state_str);
@@ -381,18 +418,21 @@ void printRobotStatus(void)
 
 }
 
-float CurrentLeftLightSensorVal(void)
+//Analog sensor read values
+//wrappers on the filter-output function
+float currentLeftLightSensorValue(void)
 {
   return  get_filtered_and_scaled_analog_sensor_val(left_filter_buff, left_filter_buff_start_idx);
 }
-float CurrentRightLightSensorVal(void)
+float currentRightLightSensorValue(void)
 {
   return  get_filtered_and_scaled_analog_sensor_val(right_filter_buff, right_filter_buff_start_idx);
 }
 
-boolean CurrentLeftSwitchValue(void) 
+//Digital input debouncing
+boolean currentLeftSwitchValue(void) 
 {
-   //debounce value based on what is in theh buffer
+   //debounce value based on what is in the buffer
    int i;
    boolean temp_val = left_sw_buff[0]; //initialize to see what the first value in the buffer is
    boolean val_is_stable = true;
@@ -425,7 +465,7 @@ boolean CurrentLeftSwitchValue(void)
      
    return left_sw_debounced_val;
 }
-boolean CurrentRightSwitchValue(void)
+boolean currentRightSwitchValue(void)
 {
    //debounce value based on what is in theh buffer
    int i;

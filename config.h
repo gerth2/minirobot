@@ -14,9 +14,9 @@
 
 //DO NOT USE pins 0 or 1, these are needded for serial communication
 
-//Motors must be connected to PWM-capiable pins which do not get
-//screwed up by the usage of "tone()". 5 and 6 can be screwy sometimes too.
-//So on an arduino Uno, just use 9 and 10...
+//It would be best to only use 5 and 6 for the PWM outputs. Things get
+// screwey with timers and interrupts if other pins are used. Only 5 and 6
+// have been tested to work.
 #define LEFT_MOTOR_PWM_PIN 5
 #define RIGHT_MOTOR_PWM_PIN 6
 
@@ -30,8 +30,8 @@
 #define RIGHT_SWITCH_PIN 4
 #define RED_LED_PIN 7
 #define GREEN_LED_PIN 8
-#define LEFT_MOTOR_DIR_PIN 9
-#define RIGHT_MOTOR_DIR_PIN 10
+#define LEFT_MOTOR_DIR_PIN 9   //direction pins used to invert current direction through motor
+#define RIGHT_MOTOR_DIR_PIN 10 // via switching h-bridge configuration.
 
 /*********************************************************/
 //io state inversions
@@ -50,23 +50,9 @@
 /*********************************************************/
 //User Constants
 /*********************************************************/
-//speed ranges - pct should be 0 - 100
+//speed ranges in percent of full motor range - range should be 0 - 100
 #define SPEED_MAX 100
 #define SPEED_FAST 75
 #define SPEED_MEDIUM 50
 #define SPEED_SLOW 25
 
-//Define what built-in beeps should sound like
-//might have to change depending on what speaker is like.
-#define BEEP_1_PITCH_HZ 1397
-#define BEEP_1_ON_LENGTH_MS 250
-#define BEEP_1_OFF_LENGTH_MS 250
-#define BEEP_1_REPEAT 3
-#define BEEP_2_PITCH_HZ 1760
-#define BEEP_2_ON_LENGTH_MS 1000
-#define BEEP_2_OFF_LENGTH_MS 0
-#define BEEP_2_REPEAT 1
-#define BEEP_3_PITCH_HZ 2093
-#define BEEP_3_ON_LENGTH_MS 500
-#define BEEP_3_OFF_LENGTH_MS 500
-#define BEEP_3_REPEAT 2
