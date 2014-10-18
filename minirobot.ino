@@ -18,7 +18,7 @@
 //       Included Constants 
 /******************************************/
 #include "User_Code.h"
-#include "TimerOne.h" #timer-based interrupt library
+#include "TimerOne.h"
 
 
 /******************************************/
@@ -29,8 +29,8 @@
 #define PWM_MAX 255 //range of PWM signals. By arduino specs, this must be an unsigned char, which has range 0-255
 #define PWM_MIN 0
 
-#define SAMPLE_PERIOD_US 20000 //length of the input sample period in microseconds
-                              //2000us yeilds a sample rate of 500Hz
+#define SAMPLE_PERIOD_US 2000    //length of the input sample period in microseconds
+                                 //2000us yeilds a sample rate of 500Hz
 
 #define NUM_FILTER_TAPS 25   //buffer lengths
 #define LEFT_SW_BUFFER_LEN 10
@@ -43,8 +43,12 @@
 float current_speed_pct = 0;
 boolean current_left_motor_dir = FORWARD;
 boolean current_right_motor_dir = FORWARD;
+
+//Strings to hold kid-friendly descriptions of what's going on
 String current_dir_str = "NONE";
 String current_speed_str = "STOP";
+String current_left_sw_value = "NOT PRESSED";
+String current_right_sw_value = "NOT PRESSED";
 
 //volatile b/c these are changed inside the interrupt routine
 volatile unsigned char left_filter_buff_start_idx = 0;
@@ -57,31 +61,32 @@ volatile unsigned char right_sw_buff_start_idx = 0;
 //Assumed passband of 0-30Hz, gain 1
 //Stopband: 50-250Hz, gain 0
 const float filter_coef[NUM_FILTER_TAPS] = {
-                                                 0.040928427477075285,
-                                                -0.03114113765147863,
-                                                -0.03146978868376737,
-                                                -0.032750560783785895,
-                                                -0.029754341774297543,
-                                                -0.018635003339078193,
-                                                0.0020380773131874847,
-                                                0.03169197530148918,
-                                                0.06719096139954261,
-                                                0.10354918750956267,
-                                                0.13511794838959662,
-                                                0.1565649896617666,
-                                                0.164150546780493,
-                                                0.1565649896617666,
-                                                0.13511794838959662,
-                                                0.10354918750956267,
-                                                0.06719096139954261,
-                                                0.03169197530148918,
-                                                0.0020380773131874847,
-                                                -0.018635003339078193,
-                                                -0.029754341774297543,
-                                                -0.032750560783785895,
-                                                -0.03146978868376737,
-                                                -0.03114113765147863,
-                                                0.040928427477075285
+                                                0.0604206028416727,
+                                                0.022765286202108867,
+                                                0.026559407357829072,
+                                                0.030298526984037823,
+                                                0.0339463305236097,
+                                                0.0374149200448067,
+                                                0.04063324687425954,
+                                                0.0435353609068285,
+                                                0.04602927926463161,
+                                                0.048021926552339445,
+                                                0.04948579543591529,
+                                                0.05048020312982948,
+                                                0.05067537613278131,
+                                                0.05048020312982948,
+                                                0.04948579543591529,
+                                                0.048021926552339445,
+                                                0.04602927926463161,
+                                                0.0435353609068285,
+                                                0.04063324687425954,
+                                                0.0374149200448067,
+                                                0.0339463305236097,
+                                                0.030298526984037823,
+                                                0.026559407357829072,
+                                                0.022765286202108867,
+                                                0.0604206028416727
+
                                                                           };
 
 //volatile b/c these are changed inside the interrupt routine
@@ -97,7 +102,11 @@ boolean right_sw_debounced_val = false;
 /******************************************/
 //       Arduino Setup Function 
 /******************************************/
-void setup() {                
+void setup() {   
+  
+  Serial.begin(115200); //Initalize serial port hardware
+  Serial.println("Started initalizing..."); 
+  
   // set pin direction modes so the microprocessor knows to drive or read the pin voltages
   pinMode(LEFT_MOTOR_PWM_PIN, OUTPUT);
   pinMode(RIGHT_MOTOR_PWM_PIN, OUTPUT);    
@@ -109,10 +118,11 @@ void setup() {
   pinMode(GREEN_LED_PIN, OUTPUT); 
   pinMode(SPEAKER_PIN , OUTPUT); 
   
-  Timer1.initialize(SAMPLE_PERIOD_US); //timer1 fires off at a pre-defined rate
-  Timer1.attachInterrupt(isr_sample); //set the sample function to run every time timer1 fires off
+  Timer1.initialize(SAMPLE_PERIOD_US);
+  Timer1.attachInterrupt(isr_sample);
+
+  Serial.println("Done initalizing!"); 
   
-  Serial.begin(115200); //Initalize serial port hardware
 }
 
 /******************************************/
@@ -121,26 +131,19 @@ void setup() {
 // This is the arduino-required function for non-setup things.
 // We won't actually use it as a loop.
 void loop() {
-
-  //play tone sequence to indicate robot is starting
-  tone(SPEAKER_PIN, 1397 , 750);
-  tone(SPEAKER_PIN, 2093, 1500);    
   
   //pause briefly before starting
-  delay(1000); 
+  delay(1000);
   
   //run user's function
+  Serial.println("Starting User Function..."); 
   run_robot(); //The user's function! Yaaaay!
-  
+  Serial.println("Finished User Function!"); 
   //kill the motors in case the student forgot to
   set_motor_vals(FORWARD, 0.0, FORWARD, 0.0);
 
   //pause briefly at the end
-  delay(1000); 
-  
-  //play tone sequence to indicate robot is finished
-  tone(SPEAKER_PIN, 2093, 750);
-  tone(SPEAKER_PIN, 1397 , 1500);    
+  delay(1000);
   
   while(1); //JK, don't run a loop here, just hang when the user's function finishes
 }
@@ -163,11 +166,11 @@ void isr_sample(void)
 
    left_sw_buff[left_sw_buff_start_idx++] = digitalRead(LEFT_SWITCH_PIN);
    if(left_sw_buff_start_idx == LEFT_SW_BUFFER_LEN)
-     left_filter_buff_start_idx = 0;
+     left_sw_buff_start_idx = 0;
    
    right_sw_buff[right_sw_buff_start_idx++] = digitalRead(RIGHT_SWITCH_PIN);
    if(right_sw_buff_start_idx == RIGHT_SW_BUFFER_LEN)
-     right_filter_buff_start_idx = 0;
+     right_sw_buff_start_idx = 0;
 }
 
 
@@ -322,23 +325,6 @@ void turnGreenLEDOff(void)
     digitalWrite(GREEN_LED_PIN, LOW);
 }
 
-void playBeep1(void)
-{
-  
-}
-void playBeep2(void)
-{
-  
-}
-void playBeep3(void)
-{
-  
-}
-void playBeepCustom(int pitch_in_hz, int length_in_ms)
-{
-  tone(SPEAKER_PIN, pitch_in_hz, length_in_ms);
-}
-
 void printMessage(const char * message)
 {
   Serial.println(message); 
@@ -348,6 +334,7 @@ void printRobotStatus(void)
   Serial.println("-------------------------------------");
   Serial.print("Runtime: ");
   Serial.print((float)millis()/1000.0);
+  Serial.println(" s");
   Serial.print("Direction: ");
   Serial.println(current_dir_str);
   Serial.print("Speed: ");
@@ -357,9 +344,11 @@ void printRobotStatus(void)
   Serial.print("Right Switch: ");
   Serial.println(CurrentRightSwitchValue());
   Serial.print("Left Light Sensor: ");
-  Serial.println(CurrentLeftLightSensorVal());
+  Serial.print(CurrentLeftLightSensorVal());
+  Serial.println(" %");
   Serial.print("Right Light Sensor: ");
-  Serial.println(CurrentRightLightSensorVal());
+  Serial.print(CurrentRightLightSensorVal());
+  Serial.println(" %");
   Serial.println("-------------------------------------");
 
 }

@@ -17,8 +17,8 @@
 //Motors must be connected to PWM-capiable pins which do not get
 //screwed up by the usage of "tone()". 5 and 6 can be screwy sometimes too.
 //So on an arduino Uno, just use 9 and 10...
-#define LEFT_MOTOR_PWM_PIN 9
-#define RIGHT_MOTOR_PWM_PIN 10
+#define LEFT_MOTOR_PWM_PIN 5
+#define RIGHT_MOTOR_PWM_PIN 6
 
 
 //light sensors must be connected to an analog input (A0-A6)
@@ -30,8 +30,8 @@
 #define RIGHT_SWITCH_PIN 4
 #define RED_LED_PIN 7
 #define GREEN_LED_PIN 8
-#define LEFT_MOTOR_DIR_PIN 5
-#define RIGHT_MOTOR_DIR_PIN 6
+#define LEFT_MOTOR_DIR_PIN 9
+#define RIGHT_MOTOR_DIR_PIN 10
 #define SPEAKER_PIN 3
 
 /*********************************************************/
